@@ -8,7 +8,7 @@ on:
             - master # master 브랜치의 push이면서
         paths:
             - "packer/**" # packer/ 하위 경로에 변화가 있을 때 동작하게 한다.
-    workflow_dispatch # 원할 때 deploy 할  수 있는 옵션
+    workflow_dispatch: # 원할 때 deploy할 수 있는 옵션
 
 jobs:
     packer_build:
