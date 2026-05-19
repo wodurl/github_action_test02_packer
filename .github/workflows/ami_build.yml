@@ -1,0 +1,47 @@
+# github_action/test02_packer/.github/workflows/ami_build.yml
+# cSpell:disable
+
+name: "Packer AMI 만들기"
+on:
+    push:
+        branches:
+            - master # master 브랜치의 push이면서
+        paths:
+            - "packer/**" # packer/ 하위 경로에 변화가 있을 때 동작하게 한다.
+        workflow_dispatch # 원할 때 deploy 할  수 있는 옵션
+
+jobs:
+    packer_build:
+        runs-on: ubuntu-latest
+        name: "Build AMI with packer & ansible"
+        steps:
+            - name: Checkout Repository # 저장소로부터 소스 코드 가져오기
+              uses: actions/checkout@v4
+
+            - name: Setup Packer # ubuntu에 packer 설치
+              uses: hashicorp/setup-packer@main
+              with:
+                version: "latest"
+            
+            # 인증 정보를 환경 변수에 넣을수도 있지만 혹시 중간에 에러가 났을 때, 인증키가 로그에 노출될 수 있다.
+            - name: AWS Configure # aws 인증정보 제공
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ap-northeast-2
+
+            - name: Packer Init and Build # 초기화와 빌드를 한 번에
+              run: |
+                packer init .
+                packer build .
+              working-directory: ./packer
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v4
+
+            - name: Terraform Init and Apply # ./terraform 안에 있는 terraform 자원을 init, apply
+              run: |
+                terraform init
+                terraform apply --auto-approve
+              working-directory: ./terraform
